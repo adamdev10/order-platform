@@ -62,6 +62,26 @@ public class OrderService {
                 .orElseThrow(() -> new OrderNotFoundException(orderId));
     }
 
+    @Transactional
+    public void markConfirmed(UUID orderId, long totalAmountCents) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException(orderId));
+        order.markConfirmed(totalAmountCents);
+    }
+
+    @Transactional
+    public void markCancelled(UUID orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException(orderId));
+        order.markCancelled();
+    }
+
+    @Transactional(readOnly = true)
+    public Order loadById(UUID orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException(orderId));
+    }
+
     private List<OrderCreatedItem> toEventItems(Order order) {
         return order.getItems().stream()
                 .map(item -> new OrderCreatedItem(

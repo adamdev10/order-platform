@@ -1,6 +1,8 @@
 package com.adamdev.orderplatform.order.messaging;
 
 import com.adamdev.orderplatform.events.OrderCreatedEvent;
+import com.adamdev.orderplatform.events.OrderFinalEvent;
+import com.adamdev.orderplatform.events.StockReleaseEvent;
 import com.adamdev.orderplatform.events.Topics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,14 +21,26 @@ public class OrderEventPublisher {
     }
 
     public void publishOrderCreated(OrderCreatedEvent event) {
-        String key = event.orderId().toString();
-        kafkaTemplate.send(Topics.ORDER_CREATED, key, event)
-                .whenComplete((result, ex) -> {
-                    if (ex != null) {
-                        log.error("Failed to publish order-created for order {}", key, ex);
-                    } else {
-                        log.info("Published order-created for order {} to partition {}", key, result.getRecordMetadata().partition());
-                    }
-                });
+        send(Topics.ORDER_CREATED, event.orderId().toString(), event);
+    }
+
+    public void publishStockRelease(StockReleaseEvent event) {
+        send(Topics.STOCK_RELEASE, event.orderId().toString(), event);
+    }
+
+    public void publishOrderFinal(OrderFinalEvent event) {
+        send(Topics.ORDER_FINAL_EVENTS, event.orderId().toString(), event);
+    }
+
+
+    private void send(String topic, String key, Object event) {
+        kafkaTemplate.send(topic, key, event).whenComplete((result, ex) -> {
+            if (ex != null) {
+                log.error("Failed to publish to {} for key {}", topic, key, ex);
+            } else {
+                log.info("Published to {} for key {} partition {}",
+                        topic, key, result.getRecordMetadata().partition());
+            }
+        });
     }
 }
